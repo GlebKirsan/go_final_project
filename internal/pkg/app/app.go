@@ -2,34 +2,29 @@ package app
 
 import (
 	"net/http"
-	"os"
 
+	"github.com/GlebKirsan/go-final-project/internal/database"
+	"github.com/GlebKirsan/go-final-project/internal/env"
 	"github.com/go-chi/chi/v5"
 )
 
 type App struct {
-	router *chi.Mux
-}
-
-func GetEnvOrDefault(key string, def string) string {
-	if variable := os.Getenv(key); len(variable) != 0 {
-		return variable
-	}
-	return def
+	Router *chi.Mux
 }
 
 func New() (*App, error) {
 	a := &App{}
 
-	a.router = chi.NewRouter()
+	a.Router = chi.NewRouter()
+	database.ConnectDB()
 
 	return a, nil
 }
 
 func (a *App) Run() error {
-	port := GetEnvOrDefault("TODO_PORT", "7540")
-	a.router.Handle("/*", http.FileServer(http.Dir("./web")))
-	err := http.ListenAndServe(":"+port, a.router)
+	port := env.GetEnvOrDefault("TODO_PORT", "7540")
+	a.Router.Handle("/*", http.FileServer(http.Dir("./web")))
+	err := http.ListenAndServe(":"+port, a.Router)
 	if err != nil {
 		return err
 	}
