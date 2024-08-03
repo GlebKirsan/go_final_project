@@ -5,6 +5,7 @@ import (
 
 	"github.com/GlebKirsan/go-final-project/internal/database"
 	"github.com/GlebKirsan/go-final-project/internal/env"
+	"github.com/GlebKirsan/go-final-project/internal/handlers"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -24,6 +25,7 @@ func New() (*App, error) {
 func (a *App) Run() error {
 	port := env.GetEnvOrDefault("TODO_PORT", "7540")
 	a.Router.Handle("/*", http.FileServer(http.Dir("./web")))
+	a.Router.Get("/api/nextdate", handlers.GetNextDate)
 	err := http.ListenAndServe(":"+port, a.Router)
 	if err != nil {
 		return err
