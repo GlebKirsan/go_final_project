@@ -1,6 +1,8 @@
 package database
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -16,6 +18,18 @@ type Dbinstance struct {
 }
 
 var DB Dbinstance
+
+func FindByDate(tasks *[]models.Task, date string) *gorm.DB {
+	return DB.Db.Limit(50).Order("date").Where("date = @date", sql.Named("date", date)).Find(&tasks)
+}
+
+func FindByTitle(tasks *[]models.Task, title string) *gorm.DB {
+	return DB.Db.Limit(50).Order("date").Where("title LIKE @title", sql.Named("title", fmt.Sprintf("%%%s%%", title))).Find(&tasks)
+}
+
+func FindAll(tasks *[]models.Task) *gorm.DB {
+	return DB.Db.Limit(50).Order("date").Find(&tasks)
+}
 
 func ConnectDB() {
 	dbFile := env.GetEnvOrDefault("TODO_DBFILE", "scheduler.db")

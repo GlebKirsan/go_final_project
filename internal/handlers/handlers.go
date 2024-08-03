@@ -14,11 +14,15 @@ import (
 
 var log = logrus.New()
 
+type ErrorResp struct {
+	Error string `json:"error"`
+}
+
 func JSONError(w http.ResponseWriter, err string, code int) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(code)
-	resp, _ := json.Marshal(map[string]any{
-		"error": err,
+	resp, _ := json.Marshal(ErrorResp{
+		Error: err,
 	})
 	w.Write(resp)
 }
@@ -117,6 +121,53 @@ func PostTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
+type GetTasksResp struct {
+	Tasks []models.Task `json:"tasks"`
+}
+
+func GetTasks(w http.ResponseWriter, r *http.Request) {
+	tasks := []models.Task{}
+
+	search := r.URL.Query().Get("search")
+	if search != "" {
+		if parsed, err := time.Parse("02.01.2006", search); err == nil {
+			resultDB := database.FindByDate(&tasks, parsed.Format(date.YYYYMMDD))
+			if resultDB.Error != nil {
+				log.Error(resultDB.Error)
+				JSONError(w, resultDB.Error.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			resultDB := database.FindByTitle(&tasks, search)
+			if resultDB.Error != nil {
+				log.Error(resultDB.Error)
+				JSONError(w, resultDB.Error.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	} else {
+		resultDB := database.FindAll(&tasks)
+		if resultDB.Error != nil {
+			log.Error(resultDB.Error)
+			JSONError(w, resultDB.Error.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	resp, err := json.Marshal(GetTasksResp{
+		Tasks: tasks,
+	})
+	if err != nil {
+		log.Error(err)
+		JSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }
