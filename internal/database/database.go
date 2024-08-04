@@ -31,6 +31,10 @@ func FindAll(tasks *[]models.Task) *gorm.DB {
 	return DB.Db.Limit(50).Order("date").Find(&tasks)
 }
 
+func FindById(task *models.Task, id string) *gorm.DB {
+	return DB.Db.First(task, id)
+}
+
 func ConnectDB() {
 	dbFile := env.GetEnvOrDefault("TODO_DBFILE", "scheduler.db")
 	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{

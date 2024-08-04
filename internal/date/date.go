@@ -37,7 +37,7 @@ func nextDateForDay(now time.Time, date time.Time, rules []string) (string, erro
 
 	for {
 		date = date.AddDate(0, 0, digit)
-		if date.After(now) {
+		if After(date, now) {
 			return date.Format(YYYYMMDD), nil
 		}
 	}
@@ -50,7 +50,7 @@ func nextDateForYear(now time.Time, date time.Time, rules []string) (string, err
 
 	for {
 		date = date.AddDate(1, 0, 0)
-		if date.After(now) {
+		if After(date, now) {
 			return date.Format(YYYYMMDD), nil
 		}
 	}
@@ -75,7 +75,7 @@ func nextDateForWeek(now time.Time, date time.Time, rules []string) (string, err
 
 	for {
 		date = date.AddDate(0, 0, 1)
-		if date.After(now) && weekdays[date.Weekday()] {
+		if After(date, now) && weekdays[date.Weekday()] {
 			return date.Format(YYYYMMDD), nil
 		}
 	}
@@ -132,7 +132,7 @@ func nextDateForMonth(now time.Time, date time.Time, rules []string) (string, er
 			continue
 		}
 
-		if date.After(now) {
+		if After(date, now) {
 			return date.Format(YYYYMMDD), nil
 		}
 	}
@@ -154,4 +154,12 @@ func NextDate(now time.Time, date time.Time, repeat string) (string, error) {
 		return nextDateForMonth(now, date, rules)
 	}
 	return "", errors.New("wrong repeat format")
+}
+
+func Before(d1 time.Time, d2 time.Time) bool {
+	return d1.Year() < d2.Year() && d1.YearDay() < d2.YearDay()
+}
+
+func After(d1 time.Time, d2 time.Time) bool {
+	return d1.Year() > d2.Year() && d1.YearDay() > d2.YearDay()
 }

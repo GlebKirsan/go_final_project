@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/GlebKirsan/go-final-project/internal/database"
@@ -87,7 +88,7 @@ func PostTask(w http.ResponseWriter, r *http.Request) {
 			JSONError(w, "date has to be YYYYMMDD", http.StatusBadRequest)
 			return
 		} else {
-			if parsed.Before(now) {
+			if date.Before(parsed, now) {
 				if task.Repeat == "" {
 					task.Date = now.Format(date.YYYYMMDD)
 				} else {
@@ -167,7 +168,108 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
+}
+
+func GetTask(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+
+	if id == "" {
+		log.Error("id is empty")
+		JSONError(w, "id is empty", http.StatusBadRequest)
+		return
+	}
+
+	task := models.Task{}
+	resultDB := database.FindById(&task, id)
+	if resultDB.Error != nil {
+		log.Error(resultDB.Error)
+		JSONError(w, resultDB.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := json.Marshal(task)
+	if err != nil {
+		log.Error(err)
+		JSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
+func UpdateTask(w http.ResponseWriter, r *http.Request) {
+	task := new(models.Task)
+	var buf bytes.Buffer
+
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		log.Error(err)
+		JSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
+		log.Error(err)
+		JSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	log.Info("Update: ", task)
+
+	if task.Title == "" {
+		log.Error("title is empty")
+		JSONError(w, "title is empty", http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now()
+	if task.Date != "" {
+		if parsed, err := time.Parse(date.YYYYMMDD, task.Date); err != nil {
+			log.Error("date has to be YYYYMMDD")
+			JSONError(w, "date has to be YYYYMMDD", http.StatusBadRequest)
+			return
+		} else {
+			task.Date, err = date.NextDate(now, parsed, task.Repeat)
+			if err != nil {
+				log.Error(err)
+				JSONError(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if date.Before(parsed, now) {
+				if task.Repeat == "" {
+					task.Date = now.Format(date.YYYYMMDD)
+				}
+			}
+		}
+	} else {
+		task.Date = now.Format(date.YYYYMMDD)
+	}
+
+	storedTask := models.Task{}
+	resultDB := database.FindById(&storedTask, strconv.FormatUint(uint64(task.ID), 10))
+	if resultDB.Error != nil {
+		log.Error(resultDB.Error.Error())
+		JSONError(w, resultDB.Error.Error(), http.StatusBadRequest)
+		return
+	}
+	storedTask.Repeat = task.Repeat
+	storedTask.Title = task.Title
+	storedTask.Date = task.Date
+	storedTask.Comment = task.Comment
+
+	resultDB = database.DB.Db.Save(&storedTask)
+	if resultDB.Error != nil {
+		log.Error(resultDB.Error.Error())
+		JSONError(w, resultDB.Error.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }

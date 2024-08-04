@@ -27,6 +27,8 @@ func (a *App) Run() error {
 	a.Router.Handle("/*", http.FileServer(http.Dir("./web")))
 	a.Router.Get("/api/nextdate", handlers.GetNextDate)
 	a.Router.Post("/api/task", handlers.PostTask)
+	a.Router.Get("/api/task", handlers.GetTask)
+	a.Router.Put("/api/task", handlers.UpdateTask)
 	a.Router.Get("/api/tasks", handlers.GetTasks)
 	err := http.ListenAndServe(":"+port, a.Router)
 	if err != nil {
