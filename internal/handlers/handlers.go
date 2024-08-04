@@ -273,3 +273,78 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
+
+func DeleteTask(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+
+	if id == "" {
+		log.Error("id is empty")
+		JSONError(w, "id is empty", http.StatusBadRequest)
+		return
+	}
+
+	resultDB := database.DeleteById(id)
+	if resultDB.Error != nil {
+		log.Error(resultDB.Error)
+		JSONError(w, resultDB.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
+}
+
+func MarkTaskDone(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+
+	if id == "" {
+		log.Error("id is empty")
+		JSONError(w, "id is empty", http.StatusBadRequest)
+		return
+	}
+
+	task := models.Task{}
+	resultDB := database.FindById(&task, id)
+	if resultDB.Error != nil {
+		log.Error(resultDB.Error)
+		JSONError(w, resultDB.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if task.Repeat == "" {
+		resultDB = database.DB.Db.Delete(&task)
+		if resultDB.Error != nil {
+			log.Error(resultDB.Error)
+			JSONError(w, resultDB.Error.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
+		return
+	}
+	parsed, err := date.Parse(task.Date)
+	if err != nil {
+		log.Error("stored task is damaged")
+		JSONError(w, "stored task is damaged", http.StatusInternalServerError)
+		return
+	}
+	task.Date, err = date.NextDate(time.Now(), parsed, task.Repeat)
+	if err != nil {
+		log.Error("next date calculation gone wrong")
+		JSONError(w, "next date calculation gone wrong", http.StatusInternalServerError)
+		return
+	}
+
+	resultDB = database.DB.Db.Save(&task)
+	if resultDB.Error != nil {
+		log.Error(resultDB.Error.Error())
+		JSONError(w, resultDB.Error.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
+}

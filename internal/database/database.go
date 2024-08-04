@@ -35,6 +35,10 @@ func FindById(task *models.Task, id string) *gorm.DB {
 	return DB.Db.First(task, id)
 }
 
+func DeleteById(id string) *gorm.DB {
+	return DB.Db.Delete(&models.Task{}, id)
+}
+
 func ConnectDB() {
 	dbFile := env.GetEnvOrDefault("TODO_DBFILE", "scheduler.db")
 	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{

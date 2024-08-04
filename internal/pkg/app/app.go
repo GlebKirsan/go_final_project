@@ -29,6 +29,8 @@ func (a *App) Run() error {
 	a.Router.Post("/api/task", handlers.PostTask)
 	a.Router.Get("/api/task", handlers.GetTask)
 	a.Router.Put("/api/task", handlers.UpdateTask)
+	a.Router.Delete("/api/task", handlers.DeleteTask)
+	a.Router.Post("/api/task/done", handlers.MarkTaskDone)
 	a.Router.Get("/api/tasks", handlers.GetTasks)
 	err := http.ListenAndServe(":"+port, a.Router)
 	if err != nil {

@@ -157,9 +157,13 @@ func NextDate(now time.Time, date time.Time, repeat string) (string, error) {
 }
 
 func Before(d1 time.Time, d2 time.Time) bool {
-	return d1.Year() < d2.Year() && d1.YearDay() < d2.YearDay()
+	return d1.Truncate(24 * time.Hour).Before(d2.Truncate(24 * time.Hour))
 }
 
 func After(d1 time.Time, d2 time.Time) bool {
-	return d1.Year() > d2.Year() && d1.YearDay() > d2.YearDay()
+	return d1.Truncate(24 * time.Hour).After(d2.Truncate(24 * time.Hour))
+}
+
+func Parse(date string) (time.Time, error) {
+	return time.Parse(YYYYMMDD, date)
 }
