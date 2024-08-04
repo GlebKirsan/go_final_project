@@ -1,13 +1,18 @@
 package models
 
+import (
+	"fmt"
+)
+
 type Task struct {
-	ID      uint   `json:"id,string" gorm:"column:id;primaryKey"`
-	Date    string `json:"date" gorm:"column:date;type:string;index"`
-	Title   string `json:"title" gorm:"column:title;not null"`
-	Comment string `json:"comment" gorm:"column:comment"`
-	Repeat  string `json:"repeat" gorm:"column:repeat;type:varchar(128)"`
+	ID      string `json:"id"`
+	Date    string `json:"date"`
+	Title   string `json:"title"`
+	Comment string `json:"comment"`
+	Repeat  string `json:"repeat"`
 }
 
-func (Task) TableName() string {
-	return "scheduler"
+func (t *Task) String() string {
+	return fmt.Sprintf("Task{id=%s, date=%s, title=%s, comment=%s, repeat=%s}",
+		t.ID, t.Date, t.Title, t.Comment, t.Repeat)
 }

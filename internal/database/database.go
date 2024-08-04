@@ -2,61 +2,36 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
-	"os"
 
-	"github.com/GlebKirsan/go-final-project/internal/env"
-	"github.com/GlebKirsan/go-final-project/internal/models"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"github.com/GlebKirsan/go-final-project/internal/config"
+	"github.com/GlebKirsan/go-final-project/internal/database/repositories"
+	_ "modernc.org/sqlite"
 )
 
-type Dbinstance struct {
-	Db *gorm.DB
+type DB struct {
+	*sql.DB
 }
 
-var DB Dbinstance
+type Storage struct {
+	Db *sql.DB
 
-func FindByDate(tasks *[]models.Task, date string) *gorm.DB {
-	return DB.Db.Limit(50).Order("date").Where("date = @date", sql.Named("date", date)).Find(&tasks)
+	Task *repositories.TaskRepo
 }
 
-func FindByTitle(tasks *[]models.Task, title string) *gorm.DB {
-	return DB.Db.Limit(50).Order("date").Where("title LIKE @title", sql.Named("title", fmt.Sprintf("%%%s%%", title))).Find(&tasks)
-}
-
-func FindAll(tasks *[]models.Task) *gorm.DB {
-	return DB.Db.Limit(50).Order("date").Find(&tasks)
-}
-
-func FindById(task *models.Task, id string) *gorm.DB {
-	return DB.Db.First(task, id)
-}
-
-func DeleteById(id string) *gorm.DB {
-	return DB.Db.Delete(&models.Task{}, id)
-}
-
-func ConnectDB() {
-	dbFile := env.GetEnvOrDefault("TODO_DBFILE", "scheduler.db")
-	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
-
+func ConnectDB() (*Storage, error) {
+	cfg := config.Get()
+	db, err := sql.Open("sqlite", cfg.DBFile)
 	if err != nil {
-		log.Fatal("Failed to connect to database.\n", err)
-		os.Exit(1)
+		return nil, err
 	}
 
 	log.Println("Database connected")
-	db.Logger = logger.Default.LogMode(logger.Info)
 
 	log.Println("Running migration")
-	db.AutoMigrate(&models.Task{})
-
-	DB = Dbinstance{
-		Db: db,
+	if err = runMigration(db); err != nil {
+		return nil, err
 	}
+
+	return &Storage{Db: db, Task: repositories.NewTaskRepo(db)}, nil
 }
