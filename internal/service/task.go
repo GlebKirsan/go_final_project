@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/GlebKirsan/go-final-project/internal/database"
@@ -116,11 +115,7 @@ func (s *TaskService) UpdateTask(task *models.Task) error {
 		task.Date = now.Format(YYYYMMDD)
 	}
 
-	id, err := strconv.Atoi(task.ID)
-	if err != nil {
-		return err
-	}
-	storedTask, err := s.storage.Task.GetTask(int64(id))
+	storedTask, err := s.storage.Task.GetTask(task.ID)
 	if err != nil {
 		return err
 	}

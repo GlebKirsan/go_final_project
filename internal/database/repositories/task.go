@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"strconv"
 
 	"github.com/GlebKirsan/go-final-project/internal/models"
 )
@@ -58,11 +57,10 @@ func (repo *TaskRepo) GetTask(id int64) (*models.Task, error) {
 	WHERE id = :id;`, sql.Named("id", id))
 
 	task := &models.Task{}
-	err := row.Scan(&id, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+	err := row.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 	if err != nil {
 		return nil, err
 	}
-	task.ID = strconv.Itoa(int(id))
 
 	return task, nil
 }
@@ -71,14 +69,12 @@ func parseTasks(rows *sql.Rows) ([]models.Task, error) {
 	tasks := make([]models.Task, 0, LIMIT)
 	for rows.Next() {
 		task := models.Task{}
-		var id int64
 
-		err := rows.Scan(&id, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 		if err != nil {
 			return nil, err
 		}
 
-		task.ID = strconv.Itoa(int(id))
 		tasks = append(tasks, task)
 	}
 
