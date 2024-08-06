@@ -27,10 +27,6 @@ func NewTaskHandler(manager *service.Manager, render *render.Render, logger *log
 	}
 }
 
-type ErrorResp struct {
-	Error string `json:"error"`
-}
-
 func (handler *TaskHandler) handleError(w http.ResponseWriter, err error, code int) {
 	handler.logger.Error().Msg(err.Error())
 	handler.render.JSON(w, code, map[string]any{"error": err.Error()})

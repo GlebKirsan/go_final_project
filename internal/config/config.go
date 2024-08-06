@@ -14,6 +14,8 @@ type Config struct {
 	DBFile        string `envconfig:"TODO_DBFILE" default:"scheduler.db"`
 	LogLevel      string `envconfig:"TODO_LOG_LEVEL"`
 	MigrationPath string `envconfig:"TODO_MIGRATION_PATH" default:"internal/database/migration"`
+	Pass          string `envconfig:"TODO_PASSWORD" default:"dummy"`
+	Secret        string `envconfig:"TODO_TOKEN_SECRET" default:"secret"`
 }
 
 var (

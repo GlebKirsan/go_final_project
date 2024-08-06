@@ -19,7 +19,10 @@ var (
 
 func Get() *Logger {
 	once.Do(func() {
-		zeroLogger := zerolog.New(os.Stderr).With().Timestamp().Logger()
+		zeroLogger := zerolog.New(os.Stderr).With().
+			Timestamp().
+			Logger().
+			Output(zerolog.ConsoleWriter{Out: os.Stderr})
 		cfg := config.Get()
 		switch cfg.LogLevel {
 		case "debug":

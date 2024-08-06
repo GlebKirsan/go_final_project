@@ -9,6 +9,7 @@ import (
 type Manager struct {
 	Task *TaskService
 	Date *DateService
+	Auth *AuthService
 }
 
 func NewManager(storage *database.Storage) (*Manager, error) {
@@ -20,5 +21,6 @@ func NewManager(storage *database.Storage) (*Manager, error) {
 	return &Manager{
 		Task: NewTaskService(storage, dateService),
 		Date: dateService,
+		Auth: NewAuthService(),
 	}, nil
 }

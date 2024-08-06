@@ -13,6 +13,7 @@ import (
 	"github.com/GlebKirsan/go-final-project/internal/database"
 	"github.com/GlebKirsan/go-final-project/internal/handlers"
 	"github.com/GlebKirsan/go-final-project/internal/logger"
+	"github.com/GlebKirsan/go-final-project/internal/middleware"
 	"github.com/GlebKirsan/go-final-project/internal/service"
 )
 
@@ -41,18 +42,25 @@ func run() error {
 	render := render.New()
 	dateHandler := handlers.NewDateHandler(manager, render, logger)
 	taskHandler := handlers.NewTaskHandler(manager, render, logger)
+	authHandler := handlers.NewAuthHandler(manager, logger, render)
 
 	r := chi.NewRouter()
 	r.Handle("/*", http.FileServer(http.Dir("./web")))
-	r.Get("/api/nextdate", dateHandler.GetNextDate)
-	r.Route("/api/task", func(r chi.Router) {
-		r.Post("/", taskHandler.PostTask)
-		r.Get("/", taskHandler.GetTask)
-		r.Put("/", taskHandler.UpdateTask)
-		r.Delete("/", taskHandler.DeleteTask)
-		r.Post("/done", taskHandler.MarkTaskDone)
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/signin", authHandler.Signin)
+		r.Get("/nextdate", dateHandler.GetNextDate)
+		r.Route("/", func(r chi.Router) {
+			r.Use(middleware.Auth)
+			r.Route("/task", func(r chi.Router) {
+				r.Post("/", taskHandler.PostTask)
+				r.Get("/", taskHandler.GetTask)
+				r.Put("/", taskHandler.UpdateTask)
+				r.Delete("/", taskHandler.DeleteTask)
+				r.Post("/done", taskHandler.MarkTaskDone)
+			})
+			r.Get("/tasks", taskHandler.GetTasks)
+		})
 	})
-	r.Get("/api/tasks", taskHandler.GetTasks)
 	err = http.ListenAndServe("localhost:"+cfg.Port, r)
 	if err != nil {
 		return err
