@@ -1,4 +1,4 @@
-package date
+package service
 
 import (
 	"errors"
@@ -10,7 +10,14 @@ import (
 const YYYYMMDD = "20060102"
 const HOURS_PER_DAY = 24
 
-func ConvertSliceToInt(s []string) ([]int, error) {
+type DateService struct {
+}
+
+func NewDateService() *DateService {
+	return &DateService{}
+}
+
+func convertSliceToInt(s []string) ([]int, error) {
 	result := []int{}
 	for _, element_s := range s {
 		element, err := strconv.Atoi(element_s)
@@ -61,7 +68,7 @@ func nextDateForWeek(now time.Time, date time.Time, rules []string) (string, err
 		return "", errors.New("repeat for weeks has wrong format")
 	}
 
-	weekdays_s, err := ConvertSliceToInt(strings.Split(rules[1], ","))
+	weekdays_s, err := convertSliceToInt(strings.Split(rules[1], ","))
 	if err != nil {
 		return "", err
 	}
@@ -86,7 +93,7 @@ func nextDateForMonth(now time.Time, date time.Time, rules []string) (string, er
 		return "", errors.New("repeat for weeks has wrong format")
 	}
 
-	days_s, err := ConvertSliceToInt(strings.Split(rules[1], ","))
+	days_s, err := convertSliceToInt(strings.Split(rules[1], ","))
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +108,7 @@ func nextDateForMonth(now time.Time, date time.Time, rules []string) (string, er
 
 	months := map[time.Month]bool{}
 	if len(rules) == 3 {
-		months_s, err := ConvertSliceToInt(strings.Split(rules[2], ","))
+		months_s, err := convertSliceToInt(strings.Split(rules[2], ","))
 		if err != nil {
 			return "", nil
 		}
@@ -138,26 +145,35 @@ func nextDateForMonth(now time.Time, date time.Time, rules []string) (string, er
 	}
 }
 
-func NextDate(now time.Time, date time.Time, repeat string) (string, error) {
+func (service *DateService) NextDate(now time.Time, date string, repeat string) (string, error) {
 	if repeat == "" {
 		return "", nil
 	}
 
+	parsed, err := time.Parse(YYYYMMDD, date)
+	if err != nil {
+		return "", err
+	}
+
 	rules := strings.Split(repeat, " ")
 	if rules[0] == "d" {
-		return nextDateForDay(now, date, rules)
+		return nextDateForDay(now, parsed, rules)
 	} else if rules[0] == "y" {
-		return nextDateForYear(now, date, rules)
+		return nextDateForYear(now, parsed, rules)
 	} else if rules[0] == "w" {
-		return nextDateForWeek(now, date, rules)
+		return nextDateForWeek(now, parsed, rules)
 	} else if rules[0] == "m" {
-		return nextDateForMonth(now, date, rules)
+		return nextDateForMonth(now, parsed, rules)
 	}
 	return "", errors.New("wrong repeat format")
 }
 
-func Before(d1 time.Time, d2 time.Time) bool {
-	return d1.Truncate(24 * time.Hour).Before(d2.Truncate(24 * time.Hour))
+func Before(d1 string, d2 string) bool {
+	return d1 < d2
+}
+
+func (service *DateService) Before(d1 string, d2 string) bool {
+	return Before(d1, d2)
 }
 
 func After(d1 time.Time, d2 time.Time) bool {
