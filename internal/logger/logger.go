@@ -4,8 +4,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/GlebKirsan/go-final-project/internal/config"
 	"github.com/rs/zerolog"
+
+	"github.com/GlebKirsan/go-final-project/internal/config"
 )
 
 type Logger struct {

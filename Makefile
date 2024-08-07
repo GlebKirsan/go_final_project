@@ -13,9 +13,9 @@ vet: fmt
 .PHONY:vet
 
 build: vet
-	go build ./...
+	go build cmd/task-tracker/main.go
 .PHONY:build
 
 run: build
-	go run ./...
+	./main
 .PHONY:run

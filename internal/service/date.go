@@ -10,11 +10,11 @@ import (
 const YYYYMMDD = "20060102"
 const HOURS_PER_DAY = 24
 
-type DateService struct {
+type dateService struct {
 }
 
-func NewDateService() *DateService {
-	return &DateService{}
+func NewDateService() *dateService {
+	return &dateService{}
 }
 
 func convertSliceToInt(s []string) ([]int, error) {
@@ -145,7 +145,7 @@ func nextDateForMonth(now time.Time, date time.Time, rules []string) (string, er
 	}
 }
 
-func (service *DateService) NextDate(now time.Time, date string, repeat string) (string, error) {
+func (service *dateService) NextDate(now time.Time, date string, repeat string) (string, error) {
 	if repeat == "" {
 		return "", nil
 	}
@@ -172,7 +172,7 @@ func Before(d1 string, d2 string) bool {
 	return d1 < d2
 }
 
-func (service *DateService) Before(d1 string, d2 string) bool {
+func (service *dateService) Before(d1 string, d2 string) bool {
 	return Before(d1, d2)
 }
 

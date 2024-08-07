@@ -7,9 +7,9 @@ import (
 )
 
 type Manager struct {
-	Task *TaskService
-	Date *DateService
-	Auth *AuthService
+	Task TaskService
+	Date DateService
+	Auth AuthService
 }
 
 func NewManager(storage *database.Storage) (*Manager, error) {

@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
-
 	"github.com/unrolled/render"
 
 	"github.com/GlebKirsan/go-final-project/internal/config"
@@ -32,7 +31,7 @@ func run() error {
 	if err != nil {
 		return errors.Wrap(err, "error when creating storage")
 	}
-	defer storage.Db.Close()
+	defer storage.Close()
 
 	manager, err := service.NewManager(storage)
 	if err != nil {

@@ -9,23 +9,23 @@ import (
 	"github.com/GlebKirsan/go-final-project/internal/models"
 )
 
-type TaskService struct {
+type taskService struct {
 	storage     *database.Storage
-	dateService *DateService
+	dateService DateService
 }
 
-func NewTaskService(storage *database.Storage, dateService *DateService) *TaskService {
-	return &TaskService{
+func NewTaskService(storage *database.Storage, dateService DateService) *taskService {
+	return &taskService{
 		storage:     storage,
 		dateService: dateService,
 	}
 }
 
-func (s *TaskService) GetTask(id int64) (*models.Task, error) {
-	return s.storage.Task.GetTask(id)
+func (s *taskService) Get(id int64) (*models.Task, error) {
+	return s.storage.Task.Get(id)
 }
 
-func (s *TaskService) CreateTask(task *models.Task) (id int64, err error) {
+func (s *taskService) Create(task *models.Task) (id int64, err error) {
 	if task.Title == "" {
 		return 0, errors.New("title is empty")
 	}
@@ -55,24 +55,16 @@ func (s *TaskService) CreateTask(task *models.Task) (id int64, err error) {
 	return
 }
 
-func (s *TaskService) DeleteTask(id int64) error {
+func (s *taskService) Delete(id int64) error {
 	return s.storage.Task.Delete(id)
 }
 
-func (s *TaskService) GetAllTasks(search string) ([]models.Task, error) {
-	if search != "" {
-		if date, err := time.Parse("02.01.2006", search); err == nil {
-			return s.storage.Task.GetAllByDate(date.Format(YYYYMMDD))
-		} else {
-			return s.storage.Task.GetAllByTitle(search)
-		}
-	}
-
-	return s.storage.Task.GetAll()
+func (s *taskService) GetAll(search string) ([]models.Task, error) {
+	return s.storage.Task.GetAll(search)
 }
 
-func (s *TaskService) MarkDone(id int64) error {
-	task, err := s.storage.Task.GetTask(id)
+func (s *taskService) MarkDone(id int64) error {
+	task, err := s.storage.Task.Get(id)
 	if err != nil {
 		return err
 	}
@@ -86,10 +78,10 @@ func (s *TaskService) MarkDone(id int64) error {
 		return err
 	}
 
-	return s.storage.Task.UpdateTask(task)
+	return s.storage.Task.Update(task)
 }
 
-func (s *TaskService) UpdateTask(task *models.Task) error {
+func (s *taskService) Update(task *models.Task) error {
 	if task.Title == "" {
 		return errors.New("title is empty")
 	}
@@ -115,7 +107,7 @@ func (s *TaskService) UpdateTask(task *models.Task) error {
 		task.Date = now.Format(YYYYMMDD)
 	}
 
-	storedTask, err := s.storage.Task.GetTask(task.ID)
+	storedTask, err := s.storage.Task.Get(task.ID)
 	if err != nil {
 		return err
 	}
@@ -124,5 +116,5 @@ func (s *TaskService) UpdateTask(task *models.Task) error {
 	storedTask.Date = task.Date
 	storedTask.Comment = task.Comment
 
-	return s.storage.Task.UpdateTask(storedTask)
+	return s.storage.Task.Update(storedTask)
 }

@@ -7,23 +7,24 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/unrolled/render"
+
 	"github.com/GlebKirsan/go-final-project/internal/logger"
 	"github.com/GlebKirsan/go-final-project/internal/models"
 	"github.com/GlebKirsan/go-final-project/internal/service"
-	"github.com/unrolled/render"
 )
 
 type TaskHandler struct {
-	taskService *service.TaskService
-	render      *render.Render
-	logger      *logger.Logger
+	services *service.Manager
+	render   *render.Render
+	logger   *logger.Logger
 }
 
 func NewTaskHandler(manager *service.Manager, render *render.Render, logger *logger.Logger) *TaskHandler {
 	return &TaskHandler{
-		taskService: manager.Task,
-		render:      render,
-		logger:      logger,
+		services: manager,
+		render:   render,
+		logger:   logger,
 	}
 }
 
@@ -49,7 +50,7 @@ func (handler *TaskHandler) PostTask(w http.ResponseWriter, r *http.Request) {
 
 	handler.logger.Debug().Msg(task.String())
 
-	id, err := handler.taskService.CreateTask(&task)
+	id, err := handler.services.Task.Create(&task)
 	if err != nil {
 		handler.handleError(w, err, http.StatusBadRequest)
 		return
@@ -66,7 +67,7 @@ type GetTasksResp struct {
 
 func (handler *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
-	tasks, err := handler.taskService.GetAllTasks(search)
+	tasks, err := handler.services.Task.GetAll(search)
 	if err != nil {
 		handler.handleError(w, err, http.StatusBadRequest)
 	}
@@ -90,7 +91,7 @@ func (handler *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := handler.taskService.GetTask(int64(id))
+	task, err := handler.services.Task.Get(int64(id))
 	if err != nil {
 		handler.handleError(w, err, http.StatusInternalServerError)
 		return
@@ -114,7 +115,7 @@ func (handler *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handler.logger.Debug().Msg(task.String())
-	err = handler.taskService.UpdateTask(&task)
+	err = handler.services.Task.Update(&task)
 	if err != nil {
 		handler.handleError(w, err, http.StatusBadRequest)
 		return
@@ -136,7 +137,7 @@ func (handler *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		handler.handleError(w, err, http.StatusBadRequest)
 		return
 	}
-	err = handler.taskService.DeleteTask(int64(i))
+	err = handler.services.Task.Delete(int64(i))
 	if err != nil {
 		handler.handleError(w, err, http.StatusInternalServerError)
 		return
@@ -158,7 +159,7 @@ func (handler *TaskHandler) MarkTaskDone(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = handler.taskService.MarkDone(int64(i))
+	err = handler.services.Task.MarkDone(int64(i))
 	if err != nil {
 		handler.handleError(w, err, http.StatusBadRequest)
 		return

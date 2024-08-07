@@ -5,23 +5,24 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/unrolled/render"
+
 	"github.com/GlebKirsan/go-final-project/internal/logger"
 	"github.com/GlebKirsan/go-final-project/internal/models"
 	"github.com/GlebKirsan/go-final-project/internal/service"
-	"github.com/unrolled/render"
 )
 
 type AuthHandler struct {
-	authService *service.AuthService
-	logger      *logger.Logger
-	render      *render.Render
+	services *service.Manager
+	logger   *logger.Logger
+	render   *render.Render
 }
 
 func NewAuthHandler(manager *service.Manager, logger *logger.Logger, render *render.Render) *AuthHandler {
 	return &AuthHandler{
-		authService: manager.Auth,
-		logger:      logger,
-		render:      render,
+		services: manager,
+		logger:   logger,
+		render:   render,
 	}
 }
 
@@ -45,7 +46,7 @@ func (handler *AuthHandler) Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := handler.authService.Authorize(&auth)
+	token, err := handler.services.Auth.Authorize(&auth)
 	if err != nil {
 		handler.handleError(w, err, http.StatusUnauthorized)
 		return

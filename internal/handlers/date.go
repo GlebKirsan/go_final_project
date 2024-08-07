@@ -4,22 +4,23 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/unrolled/render"
+
 	"github.com/GlebKirsan/go-final-project/internal/logger"
 	"github.com/GlebKirsan/go-final-project/internal/service"
-	"github.com/unrolled/render"
 )
 
 type DateHandler struct {
-	dateService *service.DateService
-	render      *render.Render
-	logger      *logger.Logger
+	services *service.Manager
+	render   *render.Render
+	logger   *logger.Logger
 }
 
 func NewDateHandler(manager *service.Manager, render *render.Render, logger *logger.Logger) *DateHandler {
 	return &DateHandler{
-		dateService: manager.Date,
-		render:      render,
-		logger:      logger,
+		services: manager,
+		render:   render,
+		logger:   logger,
 	}
 }
 
@@ -37,7 +38,7 @@ func (handler *DateHandler) GetNextDate(w http.ResponseWriter, r *http.Request) 
 
 	date := r.URL.Query().Get("date")
 	repeat := r.URL.Query().Get("repeat")
-	next, err := handler.dateService.NextDate(n, date, repeat)
+	next, err := handler.services.Date.NextDate(n, date, repeat)
 	if err != nil {
 		handler.handleError(w, err, http.StatusBadRequest)
 		return

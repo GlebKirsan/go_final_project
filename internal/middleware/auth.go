@@ -3,9 +3,10 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/GlebKirsan/go-final-project/internal/config"
 	"github.com/GlebKirsan/go-final-project/internal/service"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func Auth(next http.Handler) http.Handler {

@@ -5,17 +5,18 @@ import (
 	"encoding/hex"
 	"errors"
 
+	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/GlebKirsan/go-final-project/internal/config"
 	"github.com/GlebKirsan/go-final-project/internal/models"
-	"github.com/golang-jwt/jwt/v5"
 )
 
-type AuthService struct {
+type authService struct {
 	alg jwt.SigningMethod
 }
 
-func NewAuthService() *AuthService {
-	return &AuthService{
+func NewAuthService() *authService {
+	return &authService{
 		alg: jwt.SigningMethodHS256,
 	}
 }
@@ -26,7 +27,7 @@ func GetMD5Hash(text string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func (s *AuthService) Authorize(auth *models.AuthRequest) (string, error) {
+func (s *authService) Authorize(auth *models.AuthRequest) (string, error) {
 	cfg := config.Get()
 	pass := cfg.Pass
 	if auth.Password != pass {

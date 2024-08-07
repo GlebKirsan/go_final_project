@@ -2,24 +2,52 @@ package repositories
 
 import (
 	"database/sql"
+	"strings"
+	"time"
 
 	"github.com/GlebKirsan/go-final-project/internal/models"
 )
 
 const LIMIT = 50
 
-type TaskRepo struct {
-	db *sql.DB
+type taskRepo struct {
+	db         *sql.DB
+	createStmt *sql.Stmt
+	updateStmt *sql.Stmt
+	deleteStmt *sql.Stmt
+	getStmt    *sql.Stmt
 }
 
-func NewTaskRepo(db *sql.DB) *TaskRepo {
-	return &TaskRepo{db: db}
+func NewTaskRepo(db *sql.DB) (*taskRepo, error) {
+	repo := &taskRepo{db: db}
+
+	var err error
+
+	repo.createStmt, err = db.Prepare(create)
+	if err != nil {
+		return nil, err
+	}
+
+	repo.updateStmt, err = db.Prepare(update)
+	if err != nil {
+		return nil, err
+	}
+
+	repo.getStmt, err = db.Prepare(get)
+	if err != nil {
+		return nil, err
+	}
+
+	repo.deleteStmt, err = db.Prepare(delete)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, nil
 }
 
-func (repo *TaskRepo) Create(task *models.Task) (int64, error) {
-	res, err := repo.db.Exec(`INSERT INTO scheduler (date, title, comment, repeat) 
-	VALUES (:date, :title, :comment, :repeat);`,
-		sql.Named("date", task.Date),
+func (repo *taskRepo) Create(task *models.Task) (int64, error) {
+	res, err := repo.createStmt.Exec(sql.Named("date", task.Date),
 		sql.Named("title", task.Title),
 		sql.Named("comment", task.Comment),
 		sql.Named("repeat", task.Repeat))
@@ -31,14 +59,8 @@ func (repo *TaskRepo) Create(task *models.Task) (int64, error) {
 	return res.LastInsertId()
 }
 
-func (repo *TaskRepo) UpdateTask(task *models.Task) error {
-	_, err := repo.db.Exec(`UPDATE scheduler
-	SET date = :date,
-	    title = :title,
-		comment = :comment,
-		repeat = :repeat
-	WHERE id = :id;`,
-		sql.Named("date", task.Date),
+func (repo *taskRepo) Update(task *models.Task) error {
+	_, err := repo.updateStmt.Exec(sql.Named("date", task.Date),
 		sql.Named("title", task.Title),
 		sql.Named("comment", task.Comment),
 		sql.Named("repeat", task.Repeat),
@@ -46,15 +68,13 @@ func (repo *TaskRepo) UpdateTask(task *models.Task) error {
 	return err
 }
 
-func (repo *TaskRepo) Delete(id int64) error {
-	_, err := repo.db.Exec("DELETE FROM scheduler WHERE id = :id;", sql.Named("id", id))
+func (repo *taskRepo) Delete(id int64) error {
+	_, err := repo.deleteStmt.Exec(sql.Named("id", id))
 	return err
 }
 
-func (repo *TaskRepo) GetTask(id int64) (*models.Task, error) {
-	row := repo.db.QueryRow(`SELECT id, date, title, comment, repeat 
-	FROM scheduler 
-	WHERE id = :id;`, sql.Named("id", id))
+func (repo *taskRepo) Get(id int64) (*models.Task, error) {
+	row := repo.getStmt.QueryRow(sql.Named("id", id))
 
 	task := &models.Task{}
 	err := row.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
@@ -65,7 +85,30 @@ func (repo *TaskRepo) GetTask(id int64) (*models.Task, error) {
 	return task, nil
 }
 
-func parseTasks(rows *sql.Rows) ([]models.Task, error) {
+func (repo *taskRepo) GetAll(filter string) ([]models.Task, error) {
+	var query strings.Builder
+	var args []interface{}
+
+	query.WriteString("SELECT id, date, title, comment, repeat FROM scheduler")
+	if filter != "" {
+		if date, err := time.Parse("02.01.2006", filter); err == nil {
+			query.WriteString(" WHERE date = :date")
+			args = append(args, sql.Named("date", date.Format("20060102")))
+		} else {
+			query.WriteString(" WHERE title LIKE CONCAT('%', :title, '%')")
+			args = append(args, sql.Named("title", filter))
+		}
+	}
+
+	query.WriteString(" LIMIT :limit")
+	args = append(args, sql.Named("limit", LIMIT))
+
+	rows, err := repo.db.Query(query.String(), args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
 	tasks := make([]models.Task, 0, LIMIT)
 	for rows.Next() {
 		task := models.Task{}
@@ -85,41 +128,18 @@ func parseTasks(rows *sql.Rows) ([]models.Task, error) {
 	return tasks, nil
 }
 
-func (repo *TaskRepo) GetAll() ([]models.Task, error) {
-	rows, err := repo.db.Query("SELECT id, date, title, comment, repeat FROM scheduler LIMIT :limit;", sql.Named("limit", LIMIT))
-
-	if err != nil {
-		return nil, err
+func (repo *taskRepo) Close() error {
+	if err := repo.createStmt.Close(); err != nil {
+		return err
 	}
-	defer rows.Close()
-
-	return parseTasks(rows)
-}
-
-func (repo *TaskRepo) GetAllByDate(date string) ([]models.Task, error) {
-	rows, err := repo.db.Query(`SELECT id, date, title, comment, repeat 
-	FROM scheduler 
-	WHERE date = @date
-	LIMIT :limit;`, sql.Named("date", date), sql.Named("limit", LIMIT))
-
-	if err != nil {
-		return nil, err
+	if err := repo.updateStmt.Close(); err != nil {
+		return err
 	}
-	defer rows.Close()
-
-	return parseTasks(rows)
-}
-
-func (repo *TaskRepo) GetAllByTitle(title string) ([]models.Task, error) {
-	rows, err := repo.db.Query(`SELECT id, date, title, comment, repeat 
-	FROM scheduler
-	WHERE title LIKE :title
-	LIMIT :limit;`, sql.Named("title", "%"+title+"%"), sql.Named("limit", LIMIT))
-
-	if err != nil {
-		return nil, err
+	if err := repo.getStmt.Close(); err != nil {
+		return err
 	}
-	defer rows.Close()
-
-	return parseTasks(rows)
+	if err := repo.deleteStmt.Close(); err != nil {
+		return err
+	}
+	return nil
 }

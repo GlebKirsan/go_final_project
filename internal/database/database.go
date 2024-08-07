@@ -4,19 +4,16 @@ import (
 	"database/sql"
 	"log"
 
+	_ "modernc.org/sqlite"
+
 	"github.com/GlebKirsan/go-final-project/internal/config"
 	"github.com/GlebKirsan/go-final-project/internal/database/repositories"
-	_ "modernc.org/sqlite"
 )
-
-type DB struct {
-	*sql.DB
-}
 
 type Storage struct {
 	Db *sql.DB
 
-	Task *repositories.TaskRepo
+	Task TaskRepo
 }
 
 func ConnectDB() (*Storage, error) {
@@ -33,5 +30,14 @@ func ConnectDB() (*Storage, error) {
 		return nil, err
 	}
 
-	return &Storage{Db: db, Task: repositories.NewTaskRepo(db)}, nil
+	taskRepo, err := repositories.NewTaskRepo(db)
+	if err != nil {
+		return nil, err
+	}
+	return &Storage{Db: db, Task: taskRepo}, nil
+}
+
+func (s *Storage) Close() {
+	s.Task.Close()
+	s.Db.Close()
 }
