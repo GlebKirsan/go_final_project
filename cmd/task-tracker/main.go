@@ -60,7 +60,7 @@ func run() error {
 			r.Get("/tasks", taskHandler.GetTasks)
 		})
 	})
-	err = http.ListenAndServe("localhost:"+cfg.Port, r)
+	err = http.ListenAndServe(":"+cfg.Port, r)
 	if err != nil {
 		return err
 	}
